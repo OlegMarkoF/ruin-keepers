@@ -1,0 +1,21 @@
+[
+  {
+    "id": "964b4965-2db1-4c00-b83e-d6a793450d0f",
+    "title": "Кирха Тарау — открытие сезона 2026",
+    "description": "Фото с большого субботника",
+    "cover": "/uploads/66e63a19-a4d9-4bfb-bc45-8c905d4fd1eb.jpeg",
+    "date": "2026-03-28",
+    "photos": [
+      {
+        "id": "d5dc49b6-3c79-4460-ab91-4f181af3d433",
+        "filename": "66e63a19-a4d9-4bfb-bc45-8c905d4fd1eb.jpeg",
+        "url": "/uploads/66e63a19-a4d9-4bfb-bc45-8c905d4fd1eb.jpeg",
+        "originalName": "43636.jpeg",
+        "size": 4025241,
+        "uploadedAt": "2026-09-02T10:53:52.907Z"
+      }
+    ],
+    "createdAt": "2026-09-02T10:53:41.337Z",
+    "updatedAt": "2026-09-02T10:53:52.907Z"
+  }
+]
