@@ -1,0 +1,9 @@
+[
+  {
+    "id": "7094ebfa-8538-46f0-90c3-38754e76b257",
+    "email": "admin@ruin-keepers.ru",
+    "name": "Администратор",
+    "passwordHash": "$2a$10$xzJ35OdSMBtKembthV.DEOM.secvuAdBGpiITt.Sdja6hOg1Wigym",
+    "role": "admin"
+  }
+]
