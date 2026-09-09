@@ -131,6 +131,12 @@ function seedIfEmpty() {
       },
     ])
   }
+
+
+  const videos = readJSON('videos.json', null)
+  if (videos === null || !Array.isArray(videos)) {
+    writeJSON('videos.json', [])
+  }
 }
 seedIfEmpty()
 
@@ -163,6 +169,55 @@ const upload = multer({
     else cb(new Error('Только изображения (jpeg, png, webp, gif)'))
   },
 })
+
+const videoUpload = multer({
+  storage,
+  limits: { fileSize: 400 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname || '').toLowerCase()
+    if (/^video\//.test(file.mimetype) || ['.mp4', '.webm', '.ogg', '.mov', '.m4v'].includes(ext)) {
+      cb(null, true)
+    } else cb(new Error('Только видео (mp4, webm, mov, ogg)'))
+  },
+})
+
+function parseEmbed(raw) {
+  const trimmed = (raw || '').trim()
+  if (!trimmed) return { provider: 'other', embedUrl: null, thumbnail: null, url: '' }
+  const fromIframe = trimmed.match(/src=["']([^"']+)["']/i)
+  const url = fromIframe ? fromIframe[1] : trimmed
+
+  let m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+  if (m) {
+    return {
+      provider: 'youtube',
+      embedUrl: `https://www.youtube.com/embed/${m[1]}`,
+      thumbnail: `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`,
+      url,
+    }
+  }
+  m = url.match(/rutube\.ru\/(?:video|play\/embed)\/([a-zA-Z0-9]+)/)
+  if (m) return { provider: 'rutube', embedUrl: `https://rutube.ru/play/embed/${m[1]}`, thumbnail: null, url }
+  m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
+  if (m) return { provider: 'vimeo', embedUrl: `https://player.vimeo.com/video/${m[1]}`, thumbnail: null, url }
+  if (/video_ext\.php/.test(url)) return { provider: 'vk', embedUrl: url, thumbnail: null, url }
+  m = url.match(/(?:vk\.(?:com|ru)|vkvideo\.ru)\/(?:video|clip)(-?\d+)_(\d+)/)
+  if (m) {
+    return {
+      provider: 'vk',
+      embedUrl: `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`,
+      thumbnail: null,
+      url,
+    }
+  }
+  m = url.match(/dzen\.ru\/(?:video\/watch|embed)\/([a-zA-Z0-9]+)/)
+  if (m) return { provider: 'other', embedUrl: `https://dzen.ru/embed/${m[1]}`, thumbnail: null, url }
+
+  if (/\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url)) {
+    return { provider: 'direct', embedUrl: null, thumbnail: null, url }
+  }
+  return { provider: 'other', embedUrl: url, thumbnail: null, url }
+}
 
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body
@@ -395,9 +450,138 @@ app.post('/api/upload', auth, upload.single('file'), (req, res) => {
   })
 })
 
+
+app.get('/api/videos', (req, res) => {
+  let items = readJSON('videos.json')
+  if (req.query.status) items = items.filter((v) => v.status === req.query.status)
+  if (req.query.category) items = items.filter((v) => v.category === req.query.category)
+  items.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+  res.json(items)
+})
+
+app.get('/api/videos/:id', (req, res) => {
+  const items = readJSON('videos.json')
+  const item = items.find((v) => v.id === req.params.id)
+  if (!item) return res.status(404).json({ error: 'Не найдено' })
+  res.json(item)
+})
+
+app.post('/api/videos', auth, (req, res) => {
+  const items = readJSON('videos.json')
+  const now = new Date().toISOString()
+  const parsed = req.body.source === 'embed' ? parseEmbed(req.body.url || '') : {
+    provider: 'direct', embedUrl: null, thumbnail: null, url: req.body.url || '',
+  }
+  const item = {
+    id: uuidv4(),
+    title: req.body.title || 'Без названия',
+    description: req.body.description || '',
+    date: req.body.date || now.slice(0, 10),
+    category: req.body.category || 'other',
+    source: req.body.source || 'embed',
+    url: parsed.url || req.body.url || '',
+    embedUrl: req.body.embedUrl || parsed.embedUrl,
+    provider: req.body.provider || parsed.provider,
+    thumbnail: req.body.thumbnail || parsed.thumbnail || null,
+    filename: req.body.filename || null,
+    status: req.body.status || 'published',
+    createdAt: now,
+    updatedAt: now,
+  }
+  items.unshift(item)
+  writeJSON('videos.json', items)
+  res.status(201).json(item)
+})
+
+app.put('/api/videos/:id', auth, (req, res) => {
+  const items = readJSON('videos.json')
+  const idx = items.findIndex((v) => v.id === req.params.id)
+  if (idx === -1) return res.status(404).json({ error: 'Не найдено' })
+  const prev = items[idx]
+  let extra = {}
+  if (req.body.source === 'embed' && req.body.url) {
+    const parsed = parseEmbed(req.body.url)
+    extra = {
+      url: parsed.url,
+      embedUrl: parsed.embedUrl,
+      provider: req.body.provider || parsed.provider,
+      thumbnail: req.body.thumbnail || prev.thumbnail || parsed.thumbnail,
+    }
+  }
+  items[idx] = {
+    ...prev,
+    ...req.body,
+    ...extra,
+    id: prev.id,
+    createdAt: prev.createdAt,
+    updatedAt: new Date().toISOString(),
+  }
+  writeJSON('videos.json', items)
+  res.json(items[idx])
+})
+
+app.delete('/api/videos/:id', auth, (req, res) => {
+  const items = readJSON('videos.json')
+  const item = items.find((v) => v.id === req.params.id)
+  if (item?.filename) {
+    const filePath = path.join(UPLOADS_DIR, item.filename)
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+  }
+  writeJSON('videos.json', items.filter((v) => v.id !== req.params.id))
+  res.json({ ok: true })
+})
+
+app.post('/api/videos/:id/file', auth, videoUpload.single('video'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Файл не получен' })
+  const items = readJSON('videos.json')
+  const idx = items.findIndex((v) => v.id === req.params.id)
+  if (idx === -1) return res.status(404).json({ error: 'Не найдено' })
+  const prev = items[idx]
+  if (prev.filename) {
+    const old = path.join(UPLOADS_DIR, prev.filename)
+    if (fs.existsSync(old)) fs.unlinkSync(old)
+  }
+  items[idx] = {
+    ...prev,
+    source: 'upload',
+    provider: 'direct',
+    filename: req.file.filename,
+    url: `/uploads/${req.file.filename}`,
+    embedUrl: null,
+    updatedAt: new Date().toISOString(),
+  }
+  writeJSON('videos.json', items)
+  res.json(items[idx])
+})
+
+
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-app.listen(PORT, () => {
-  console.log(`\nRuin Keepers API → http://localhost:${PORT}`)
-  console.log(`   Admin login: admin@ruin-keepers.ru / admin123\n`)
+app.use((err, _req, res, next) => {
+  if (err && err.name === 'MulterError') {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'Файл слишком большой (видео до 400 МБ, фото до 12 МБ)' })
+    }
+    return res.status(400).json({ error: err.message })
+  }
+  if (err) return res.status(400).json({ error: err.message || 'Ошибка загрузки' })
+  next()
+})
+
+const DIST = path.join(__dirname, '..', 'dist')
+const hasDist = fs.existsSync(path.join(DIST, 'index.html'))
+if (hasDist) {
+  app.use(express.static(DIST))
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next()
+    res.sendFile(path.join(DIST, 'index.html'))
+  })
+}
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\nСайт и API: http://localhost:${PORT}`)
+  console.log(`Админка:     http://localhost:${PORT}/admin`)
+  if (!hasDist) console.log('Нет dist — для продакшена сначала npm run build')
+  console.log('')
 })
