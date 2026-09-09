@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import {
-  LayoutDashboard, Newspaper, Calendar, Images, LogOut, ExternalLink, Loader2
+  LayoutDashboard, Newspaper, Calendar, Images, Video, LogOut, ExternalLink, Loader2
 } from 'lucide-react'
 
 const nav = [
@@ -9,6 +9,7 @@ const nav = [
   { to: '/admin/news', label: 'Новости', icon: Newspaper },
   { to: '/admin/events', label: 'События', icon: Calendar },
   { to: '/admin/albums', label: 'Фотоальбомы', icon: Images },
+  { to: '/admin/videos', label: 'Видео', icon: Video },
 ]
 
 export default function AdminLayout() {

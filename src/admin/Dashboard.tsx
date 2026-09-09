@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, NewsItem, EventItem, Album } from '../lib/api'
-import { Newspaper, Calendar, Images, ArrowRight } from 'lucide-react'
+import { api, NewsItem, EventItem, Album, VideoItem } from '../lib/api'
+import { Newspaper, Calendar, Images, Video, ArrowRight } from 'lucide-react'
 
 export default function Dashboard() {
   const [news, setNews] = useState<NewsItem[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
   const [albums, setAlbums] = useState<Album[]>([])
+  const [videos, setVideos] = useState<VideoItem[]>([])
 
   useEffect(() => {
-    Promise.all([api.getNews(), api.getEvents(), api.getAlbums()]).then(
-      ([n, e, a]) => {
+    Promise.all([api.getNews(), api.getEvents(), api.getAlbums(), api.getVideos()]).then(
+      ([n, e, a, v]) => {
         setNews(n)
         setEvents(e)
         setAlbums(a)
+        setVideos(v)
       }
     )
   }, [])
@@ -22,6 +24,7 @@ export default function Dashboard() {
     { label: 'Новости', count: news.length, to: '/admin/news', icon: Newspaper, sub: `${news.filter(n => n.status === 'published').length} опубликовано` },
     { label: 'События', count: events.length, to: '/admin/events', icon: Calendar, sub: `${events.filter(e => e.status === 'upcoming').length} предстоящих` },
     { label: 'Альбомы', count: albums.length, to: '/admin/albums', icon: Images, sub: `${albums.reduce((s, a) => s + (a.photos?.length || 0), 0)} фото` },
+    { label: 'Видео', count: videos.length, to: '/admin/videos', icon: Video, sub: `${videos.filter(v => v.status === 'published').length} на сайте` },
   ]
 
   return (
@@ -29,7 +32,7 @@ export default function Dashboard() {
       <h1 className="font-serif text-3xl text-stone-100 mb-2">Обзор</h1>
       <p className="text-stone-500 text-sm mb-8">Управление контентом движения</p>
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-10">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {cards.map((c) => (
           <Link key={c.to} to={c.to} className="card-ruin rounded-xl p-5 group">
             <div className="flex items-center justify-between mb-3">

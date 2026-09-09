@@ -68,6 +68,21 @@ export const api = {
   deletePhoto: (albumId: string, photoId: string) =>
     request<{ ok: boolean }>(`/api/albums/${albumId}/photos/${photoId}`, { method: 'DELETE' }),
 
+  getVideos: (status?: string) =>
+    request<VideoItem[]>(`/api/videos${status ? `?status=${status}` : ''}`),
+  getVideo: (id: string) => request<VideoItem>(`/api/videos/${id}`),
+  createVideo: (data: Partial<VideoItem>) =>
+    request<VideoItem>('/api/videos', { method: 'POST', body: JSON.stringify(data) }),
+  updateVideo: (id: string, data: Partial<VideoItem>) =>
+    request<VideoItem>(`/api/videos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteVideo: (id: string) =>
+    request<{ ok: boolean }>(`/api/videos/${id}`, { method: 'DELETE' }),
+  uploadVideoFile: (id: string, file: File) => {
+    const fd = new FormData()
+    fd.append('video', file)
+    return request<VideoItem>(`/api/videos/${id}/file`, { method: 'POST', body: fd })
+  },
+
   upload: (file: File) => {
     const fd = new FormData()
     fd.append('file', file)
@@ -117,6 +132,23 @@ export interface Album {
   cover: string | null
   date: string
   photos: Photo[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface VideoItem {
+  id: string
+  title: string
+  description: string
+  date: string
+  category: 'archive' | 'trip' | 'announce' | 'lecture' | 'other'
+  source: 'upload' | 'embed'
+  url: string
+  embedUrl: string | null
+  provider: string
+  thumbnail: string | null
+  filename: string | null
+  status: 'draft' | 'published'
   createdAt: string
   updatedAt: string
 }

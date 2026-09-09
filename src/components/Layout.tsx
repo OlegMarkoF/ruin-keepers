@@ -10,6 +10,7 @@ const nav = [
   { to: '/events', label: 'События' },
   { to: '/goals', label: 'Цели' },
   { to: '/archive', label: 'Фотоархив' },
+  { to: '/videos', label: 'Видео' },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -25,7 +26,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Link to="/" className="flex items-center gap-3 group">
               <div className="w-9 h-9 rounded-full border-ruin-gold/40 flex items-center justify-center text-ruin-gold group-hover:bg-ruin-gold/10 transition">
                 {/* <span className="font-serif text-lg font-semibold">Х</span> */}
-                <img src="../../src/images/images.png" alt="logo" />
+                <img src="/images.png" alt="logo" className="w-9 h-9 object-contain rounded-full" />
               </div>
               <div className="hidden sm:block">
                 <div className="font-serif text-lg tracking-wide text-stone-100">Хранители руин</div>

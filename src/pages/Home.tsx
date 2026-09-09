@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, MapPin, Users, Calendar, Landmark } from 'lucide-react'
+import { ArrowRight, MapPin, Users, Calendar, Landmark, Play } from 'lucide-react'
 import { stats } from '../data/goals'
 import { objects } from '../data/objects'
-import { api, EventItem, NewsItem, mediaUrl } from '../lib/api'
+import { api, EventItem, NewsItem, VideoItem, mediaUrl } from '../lib/api'
 
 export default function Home() {
   const featured = objects.slice(0, 3)
   const [events, setEvents] = useState<EventItem[]>([])
   const [news, setNews] = useState<NewsItem[]>([])
+  const [videos, setVideos] = useState<VideoItem[]>([])
 
   useEffect(() => {
     api.getEvents().then(setEvents).catch(() => {})
     api.getNews('published').then(setNews).catch(() => {})
+    api.getVideos('published').then(setVideos).catch(() => {})
   }, [])
 
   const recentEvents = events.slice(0, 3)
   const latestNews = news.slice(0, 3)
+  const latestVideos = videos.slice(0, 3)
 
   return (
     <div>
@@ -178,6 +181,43 @@ export default function Home() {
                 </div>
               </Link>
             ))}
+          </div>
+        </section>
+      )}
+
+      {latestVideos.length > 0 && (
+        <section className="bg-stone-900/30 border-y border-stone-800/60">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <h2 className="font-serif text-3xl text-stone-100 mb-2">Видео</h2>
+                <p className="text-stone-500 text-sm">Архив и съёмки с выездов</p>
+              </div>
+              <Link to="/videos" className="text-sm text-ruin-gold hover:underline flex items-center gap-1">
+                Все видео <ArrowRight size={14} />
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-5">
+              {latestVideos.map((video) => (
+                <Link key={video.id} to={`/videos/${video.id}`} className="card-ruin rounded-2xl overflow-hidden group">
+                  <div className="aspect-video bg-stone-800 relative">
+                    {video.thumbnail && (
+                      <img src={mediaUrl(video.thumbnail)!} alt="" className="w-full h-full object-cover" />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-full bg-black/60 border border-ruin-gold/40 flex items-center justify-center text-ruin-gold">
+                        <Play size={16} fill="currentColor" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-serif text-lg text-stone-100 group-hover:text-ruin-gold transition">
+                      {video.title}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       )}

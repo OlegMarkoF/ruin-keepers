@@ -10,6 +10,8 @@ import Archive from './pages/Archive'
 import AlbumDetail from './pages/AlbumDetail'
 import News from './pages/News'
 import NewsDetail from './pages/NewsDetail'
+import Videos from './pages/Videos'
+import VideoDetail from './pages/VideoDetail'
 import { AuthProvider } from './admin/AuthContext'
 import AdminLayout from './admin/AdminLayout'
 import Login from './admin/Login'
@@ -17,6 +19,7 @@ import Dashboard from './admin/Dashboard'
 import NewsAdmin from './admin/NewsAdmin'
 import EventsAdmin from './admin/EventsAdmin'
 import AlbumsAdmin from './admin/AlbumsAdmin'
+import VideosAdmin from './admin/VideosAdmin'
 
 function PublicLayout() {
   return (
@@ -41,6 +44,8 @@ export default function App() {
           <Route path="/archive/:id" element={<AlbumDetail />} />
           <Route path="/news" element={<News />} />
           <Route path="/news/:id" element={<NewsDetail />} />
+          <Route path="/videos" element={<Videos />} />
+          <Route path="/videos/:id" element={<VideoDetail />} />
         </Route>
 
         <Route path="/admin/login" element={<Login />} />
@@ -49,6 +54,7 @@ export default function App() {
           <Route path="news" element={<NewsAdmin />} />
           <Route path="events" element={<EventsAdmin />} />
           <Route path="albums" element={<AlbumsAdmin />} />
+          <Route path="videos" element={<VideosAdmin />} />
         </Route>
       </Routes>
     </AuthProvider>
